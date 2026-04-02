@@ -385,6 +385,52 @@
       text-decoration: underline;
     }
 
+    /* Footer */
+    .footer {
+      text-align: center;
+      padding: 48px 20px 32px;
+      margin-top: 48px;
+      border-top: 1px solid #1e293b;
+    }
+
+    .footer img {
+      margin-bottom: 16px;
+    }
+
+    .footer-address {
+      font-size: 0.8rem;
+      color: #64748b;
+      line-height: 1.5;
+      margin-bottom: 16px;
+    }
+
+    .footer-links {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px 18px;
+      margin-bottom: 20px;
+    }
+
+    .footer-links a {
+      font-size: 0.78rem;
+      color: #94a3b8;
+      text-decoration: none;
+    }
+
+    .footer-links a:hover {
+      color: #f59e0b;
+      text-decoration: underline;
+    }
+
+    .footer-legal {
+      font-size: 0.65rem;
+      color: #475569;
+      line-height: 1.5;
+      max-width: 680px;
+      margin: 0 auto;
+    }
+
     /* Responsive */
     @media (max-width: 500px) {
       .form-row { flex-direction: column; align-items: center; }
@@ -818,5 +864,25 @@
       return map[code] || `Contaminant #${code}`;
     }
   </script>
+
+  <footer class="footer">
+    <img src="/images/LOGO-COLOR.webp" alt="4Patriots" width="120" height="38" loading="lazy">
+    <div class="footer-address">
+      2920 Berry Hill Dr.<br>
+      Suite 300<br>
+      Nashville, TN 37204
+    </div>
+    <nav class="footer-links">
+      <a href="https://4patriots.com/pages/privacy-policy">Privacy</a>
+      <a href="https://4patriots.com/pages/terms-service">Terms &amp; Conditions</a>
+      <a href="https://4patriots.com/pages/earnings-disclaimer">Disclaimer</a>
+      <a href="https://4patriots.com/returns.php">Returns</a>
+      <a href="https://4patriots.com/pages/frequently-asked-questions">FAQ</a>
+      <a href="https://4patriots.com/pages/reviews">Testimonials</a>
+      <a href="https://4patriots.com/pages/4PEMAIL-subscribe-page">Text Club</a>
+      <a href="https://4patriots.com/pages/contact-us">Contact Us</a>
+    </nav>
+    <p class="footer-legal">LEGAL DISCLAIMER: All testimonials in this advertisement are from real people; sometimes name and picture has been changed to protect their privacy and some were given free products in exchange for their honest feedback. We make every effort to accurately represent our products and their potential, but we do not guarantee any specific results. The organizations and publications referenced on this site are not affiliated with and have not endorsed, sponsored or recommended this product. Cade Courtley is a former Navy SEAL and Platoon Commander who served 9 years of active duty and has been compensated by 4Patriots for his hard work in helping us test and endorse this product.</p>
+  </footer>
 </body>
 </html>
