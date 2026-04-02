@@ -10,12 +10,15 @@ module.exports = (req, res) => {
   proxyRequest(url, res);
 };
 
+const CACHE_HEADER = "s-maxage=86400, stale-while-revalidate=3600";
+
 function proxyRequest(url, res) {
   https.get(url, (apiRes) => {
     let data = "";
     apiRes.on("data", (chunk) => (data += chunk));
     apiRes.on("end", () => {
       res.setHeader("Content-Type", "application/json");
+      res.setHeader("Cache-Control", CACHE_HEADER);
       if (!data || data.trim() === "") {
         res.json([]);
       } else {
