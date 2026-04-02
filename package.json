@@ -1,0 +1,13 @@
+{
+  "name": "water-quality-lander",
+  "version": "1.0.0",
+  "description": "What's in your water? EPA drinking water quality lookup by zip code.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}

@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>What's in your water?</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0a1628;
+      color: #e0e7ef;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 40px 20px;
+    }
+
+    /* ── HERO / FORM SCREEN ── */
+    #hero {
+      text-align: center;
+      padding-top: 60px;
+    }
+
+    #hero h1 {
+      font-size: 2.4rem;
+      font-weight: 800;
+      color: #fff;
+      line-height: 1.2;
+      margin-bottom: 12px;
+    }
+
+    #hero h1 span {
+      color: #f59e0b;
+    }
+
+    #hero .subtitle {
+      font-size: 1.1rem;
+      color: #94a3b8;
+      margin-bottom: 36px;
+      line-height: 1.5;
+    }
+
+    .form-row {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      margin-bottom: 16px;
+    }
+
+    #zipInput {
+      padding: 16px 20px;
+      font-size: 1.2rem;
+      border: 2px solid #334155;
+      border-radius: 10px;
+      background: #1e293b;
+      color: #fff;
+      width: 200px;
+      text-align: center;
+      letter-spacing: 2px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    #zipInput:focus {
+      border-color: #f59e0b;
+    }
+
+    #submitBtn {
+      padding: 16px 32px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      background: #f59e0b;
+      color: #0a1628;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    #submitBtn:hover { background: #d97706; }
+    #submitBtn:disabled { background: #555; cursor: not-allowed; }
+
+    .disclaimer {
+      font-size: 0.75rem;
+      color: #64748b;
+      margin-top: 8px;
+    }
+
+    /* ── LOADING SCREEN ── */
+    #loading {
+      display: none;
+      text-align: center;
+      padding-top: 120px;
+    }
+
+    .spinner {
+      width: 48px;
+      height: 48px;
+      border: 4px solid #334155;
+      border-top-color: #f59e0b;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 24px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    #loading p {
+      font-size: 1.1rem;
+      color: #94a3b8;
+    }
+
+    /* ── RESULTS SCREEN ── */
+    #results {
+      display: none;
+    }
+
+    .results-header {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .results-header h2 {
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 8px;
+    }
+
+    .results-header .zip-label {
+      color: #94a3b8;
+      font-size: 1rem;
+    }
+
+    /* Alert banner */
+    .alert-banner {
+      background: #7f1d1d;
+      border: 1px solid #dc2626;
+      border-radius: 10px;
+      padding: 20px 24px;
+      margin-bottom: 28px;
+      text-align: center;
+    }
+
+    .alert-banner .alert-icon {
+      font-size: 1.6rem;
+      margin-bottom: 4px;
+    }
+
+    .alert-banner .alert-number {
+      font-size: 2.4rem;
+      font-weight: 800;
+      color: #fca5a5;
+    }
+
+    .alert-banner .alert-text {
+      color: #fecaca;
+      font-size: 0.95rem;
+      margin-top: 4px;
+    }
+
+    .no-violations-banner {
+      background: #14532d;
+      border: 1px solid #22c55e;
+    }
+
+    .no-violations-banner .alert-number {
+      color: #86efac;
+    }
+
+    .no-violations-banner .alert-text {
+      color: #bbf7d0;
+    }
+
+    /* Stat cards */
+    .stat-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-bottom: 28px;
+    }
+
+    .stat-card {
+      background: #1e293b;
+      border-radius: 10px;
+      padding: 18px;
+      text-align: center;
+    }
+
+    .stat-card .stat-value {
+      font-size: 1.6rem;
+      font-weight: 800;
+      color: #f59e0b;
+    }
+
+    .stat-card .stat-label {
+      font-size: 0.8rem;
+      color: #94a3b8;
+      margin-top: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* Chart section */
+    .chart-section {
+      background: #1e293b;
+      border-radius: 10px;
+      padding: 24px;
+      margin-bottom: 28px;
+    }
+
+    .chart-section h3 {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 16px;
+    }
+
+    .chart-container {
+      position: relative;
+      height: 260px;
+    }
+
+    /* Commentary section */
+    .commentary {
+      background: #1e293b;
+      border-left: 4px solid #f59e0b;
+      border-radius: 0 10px 10px 0;
+      padding: 20px 24px;
+      margin-bottom: 28px;
+    }
+
+    .commentary h3 {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #f59e0b;
+      margin-bottom: 10px;
+    }
+
+    .commentary p {
+      font-size: 0.95rem;
+      color: #cbd5e1;
+      line-height: 1.6;
+      margin-bottom: 10px;
+    }
+
+    .commentary p:last-child { margin-bottom: 0; }
+
+    /* Violation detail list */
+    .violation-list {
+      margin-bottom: 28px;
+    }
+
+    .violation-list h3 {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 14px;
+    }
+
+    .violation-item {
+      background: #1e293b;
+      border-radius: 8px;
+      padding: 14px 18px;
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .violation-item .vi-name {
+      font-size: 0.9rem;
+      color: #e2e8f0;
+      font-weight: 600;
+    }
+
+    .violation-item .vi-count {
+      font-size: 0.8rem;
+      background: #7f1d1d;
+      color: #fca5a5;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-weight: 700;
+    }
+
+    /* CTA */
+    .cta-section {
+      text-align: center;
+      background: linear-gradient(135deg, #1e293b, #0f172a);
+      border: 2px solid #f59e0b;
+      border-radius: 14px;
+      padding: 32px 24px;
+      margin-top: 36px;
+    }
+
+    .cta-section h3 {
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 10px;
+    }
+
+    .cta-section p {
+      color: #94a3b8;
+      font-size: 0.95rem;
+      margin-bottom: 20px;
+      line-height: 1.5;
+    }
+
+    .cta-btn {
+      display: inline-block;
+      padding: 16px 40px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      background: #f59e0b;
+      color: #0a1628;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.2s;
+    }
+
+    .cta-btn:hover { background: #d97706; }
+
+    .cta-sub {
+      font-size: 0.75rem;
+      color: #64748b;
+      margin-top: 10px;
+    }
+
+    /* Search again link */
+    .search-again {
+      text-align: center;
+      margin-top: 20px;
+    }
+
+    .search-again a {
+      color: #94a3b8;
+      text-decoration: underline;
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+
+    /* Error */
+    #error {
+      display: none;
+      text-align: center;
+      padding-top: 80px;
+    }
+
+    #error h2 {
+      color: #fca5a5;
+      margin-bottom: 12px;
+    }
+
+    #error p {
+      color: #94a3b8;
+      margin-bottom: 20px;
+    }
+
+    #error a {
+      color: #f59e0b;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+
+    /* Responsive */
+    @media (max-width: 500px) {
+      .form-row { flex-direction: column; align-items: center; }
+      #zipInput { width: 100%; max-width: 280px; }
+      #submitBtn { width: 100%; max-width: 280px; }
+      .stat-grid { grid-template-columns: 1fr; }
+      #hero h1 { font-size: 1.8rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <!-- HERO / FORM -->
+    <div id="hero">
+      <h1>What's really in <span>your water</span>?</h1>
+      <p class="subtitle">
+        Enter your zip code for a free report on drinking water violations
+        in your area — sourced directly from the EPA.
+      </p>
+      <div class="form-row">
+        <input type="text" id="zipInput" placeholder="Zip code" maxlength="5"
+               inputmode="numeric" pattern="[0-9]*" autocomplete="postal-code">
+        <button id="submitBtn" onclick="lookup()">Check my water</button>
+      </div>
+      <p class="disclaimer">Data from the EPA Safe Drinking Water Information System. Free, no signup required.</p>
+    </div>
+
+    <!-- LOADING -->
+    <div id="loading">
+      <div class="spinner"></div>
+      <p id="loadingText">Searching EPA records...</p>
+    </div>
+
+    <!-- ERROR -->
+    <div id="error">
+      <h2 id="errorTitle">Something went wrong</h2>
+      <p id="errorMsg">We couldn't reach the EPA database. Try again in a moment.</p>
+      <a onclick="showScreen('hero')">Try another zip code</a>
+    </div>
+
+    <!-- RESULTS -->
+    <div id="results"></div>
+  </div>
+
+  <script>
+    // ── PASS-THROUGH TRACKING PARAMS ──
+    // Capture all query params from the incoming URL (UTMs, custom ad params, etc.)
+    // and append them to the CTA link whenever it exists on the page.
+    const CTA_BASE = "https://go.4patriots.com/ofc-flash-sale/";
+    const incomingParams = window.location.search; // e.g. "?utm_source=fb&utm_campaign=water&custom_id=abc"
+
+    function buildCtaUrl() {
+      if (!incomingParams) return CTA_BASE;
+      // If the base URL already has a query string, append with &; otherwise use ?
+      const separator = CTA_BASE.includes("?") ? "&" : "?";
+      return CTA_BASE + separator + incomingParams.slice(1); // drop the leading "?"
+    }
+
+    // Apply to any CTA link on the page (called after results render)
+    function applyCtaParams() {
+      const link = document.getElementById("ctaLink");
+      if (link) link.href = buildCtaUrl();
+    }
+
+    // Apply on initial load (in case CTA is already in DOM)
+    document.addEventListener("DOMContentLoaded", applyCtaParams);
+
+    // ── SCREEN MANAGEMENT ──
+    function showScreen(id) {
+      ["hero", "loading", "results", "error"].forEach(s => {
+        document.getElementById(s).style.display = "none";
+      });
+      document.getElementById(id).style.display = "block";
+    }
+
+    // Allow Enter key to submit
+    document.getElementById("zipInput").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") lookup();
+    });
+
+    // Only allow digits
+    document.getElementById("zipInput").addEventListener("input", (e) => {
+      e.target.value = e.target.value.replace(/\D/g, "");
+    });
+
+    // ── MAIN LOOKUP ──
+    async function lookup() {
+      const zip = document.getElementById("zipInput").value.trim();
+      if (zip.length !== 5) {
+        document.getElementById("zipInput").style.borderColor = "#dc2626";
+        return;
+      }
+
+      showScreen("loading");
+
+      const loadingMessages = [
+        "Searching EPA records...",
+        "Checking water systems in your area...",
+        "Pulling violation history...",
+        "Analyzing contaminant data..."
+      ];
+      let msgIndex = 0;
+      const msgInterval = setInterval(() => {
+        msgIndex = (msgIndex + 1) % loadingMessages.length;
+        document.getElementById("loadingText").textContent = loadingMessages[msgIndex];
+      }, 1800);
+
+      try {
+        // Step 1: Get water systems for this zip
+        const sysRes = await fetch(`/api/water-systems?zip=${zip}`);
+        const systems = await sysRes.json();
+
+        if (!Array.isArray(systems) || systems.length === 0) {
+          clearInterval(msgInterval);
+          showError("No water systems found",
+            `We couldn't find any public water systems for zip code ${zip}. This may be a very rural area or a P.O. box zip code. Try a nearby zip.`);
+          return;
+        }
+
+        // Get unique PWSIDs (public water system IDs)
+        const pwsids = [...new Set(systems.map(s => s.PWSID || s.pwsid).filter(Boolean))];
+
+        // Step 2: Fetch violations for each system (limit to first 5 systems)
+        const violationPromises = pwsids.slice(0, 5).map(id =>
+          fetch(`/api/violations?pwsid=${encodeURIComponent(id)}`).then(r => r.json()).catch(() => [])
+        );
+        const violationArrays = await Promise.all(violationPromises);
+        const allViolations = violationArrays.flat().filter(v => v && typeof v === "object");
+
+        clearInterval(msgInterval);
+
+        // Step 3: Render results
+        renderResults(zip, systems, allViolations);
+
+      } catch (err) {
+        clearInterval(msgInterval);
+        console.error(err);
+        showError("Something went wrong",
+          "We couldn't reach the EPA database. Please try again in a moment.");
+      }
+    }
+
+    function showError(title, msg) {
+      document.getElementById("errorTitle").textContent = title;
+      document.getElementById("errorMsg").textContent = msg;
+      showScreen("error");
+    }
+
+    // ── RENDER RESULTS ──
+    function renderResults(zip, systems, violations) {
+      const totalViolations = violations.length;
+      const healthBased = violations.filter(v =>
+        (v.IS_HEALTH_BASED_IND || v.is_health_based_ind || "").toUpperCase() === "Y"
+      );
+
+      // Count unique contaminants
+      const contaminantCounts = {};
+      violations.forEach(v => {
+        const name = v.CONTAMINANT_CODE || v.contaminant_code || "Unknown";
+        contaminantCounts[name] = (contaminantCounts[name] || 0) + 1;
+      });
+      const uniqueContaminants = Object.keys(contaminantCounts).length;
+
+      // Count by violation category
+      const categoryCounts = {};
+      violations.forEach(v => {
+        const cat = formatCategory(v.VIOLATION_CATEGORY_CODE || v.violation_category_code || "Other");
+        categoryCounts[cat] = (categoryCounts[cat] || 0) + 1;
+      });
+
+      // Count by year
+      const yearCounts = {};
+      violations.forEach(v => {
+        const dateStr = v.COMPL_PER_BEGIN_DATE || v.compl_per_begin_date || "";
+        const year = dateStr ? new Date(dateStr).getFullYear() : null;
+        if (year && !isNaN(year)) {
+          yearCounts[year] = (yearCounts[year] || 0) + 1;
+        }
+      });
+
+      // Get population served (from first system)
+      const pop = systems[0]?.POPULATION_SERVED_COUNT || systems[0]?.population_served_count || "Unknown";
+
+      // Top contaminants for the list
+      const topContaminants = Object.entries(contaminantCounts)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 8);
+
+      // ── BUILD HTML ──
+      let html = `
+        <div class="results-header">
+          <h2>Your water quality report</h2>
+          <p class="zip-label">Zip code ${zip} · ${systems.length} public water system${systems.length > 1 ? "s" : ""}</p>
+        </div>
+      `;
+
+      // Alert banner
+      if (totalViolations > 0) {
+        html += `
+          <div class="alert-banner">
+            <div class="alert-icon">⚠</div>
+            <div class="alert-number">${totalViolations}</div>
+            <div class="alert-text">health-based drinking water violations found in your area</div>
+          </div>
+        `;
+      } else {
+        html += `
+          <div class="alert-banner no-violations-banner">
+            <div class="alert-icon">✓</div>
+            <div class="alert-number">0</div>
+            <div class="alert-text">health-based violations on record — but that doesn't mean your water is perfect</div>
+          </div>
+        `;
+      }
+
+      // Stat cards
+      html += `
+        <div class="stat-grid">
+          <div class="stat-card">
+            <div class="stat-value">${totalViolations}</div>
+            <div class="stat-label">Total violations</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">${uniqueContaminants}</div>
+            <div class="stat-label">Contaminants flagged</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">${systems.length}</div>
+            <div class="stat-label">Water systems</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">${typeof pop === "number" ? pop.toLocaleString() : pop}</div>
+            <div class="stat-label">People served</div>
+          </div>
+        </div>
+      `;
+
+      // Chart: violations by year (if data exists)
+      const sortedYears = Object.keys(yearCounts).sort();
+      if (sortedYears.length > 1) {
+        html += `
+          <div class="chart-section">
+            <h3>Violations over time</h3>
+            <div class="chart-container"><canvas id="yearChart"></canvas></div>
+          </div>
+        `;
+      }
+
+      // Chart: violations by category
+      if (Object.keys(categoryCounts).length > 0) {
+        html += `
+          <div class="chart-section">
+            <h3>Violations by type</h3>
+            <div class="chart-container"><canvas id="catChart"></canvas></div>
+          </div>
+        `;
+      }
+
+      // Top contaminants list
+      if (topContaminants.length > 0) {
+        html += `<div class="violation-list"><h3>Most common contaminants flagged</h3>`;
+        topContaminants.forEach(([code, count]) => {
+          html += `
+            <div class="violation-item">
+              <span class="vi-name">${formatContaminant(code)}</span>
+              <span class="vi-count">${count} violation${count > 1 ? "s" : ""}</span>
+            </div>
+          `;
+        });
+        html += `</div>`;
+      }
+
+      // Commentary
+      html += buildCommentary(totalViolations, uniqueContaminants, pop, zip);
+
+      // CTA
+      html += `
+        <div class="cta-section">
+          <h3>Protect your family's drinking water</h3>
+          <p>
+            Municipal water treatment can't catch everything. And aging pipes between
+            the plant and your faucet can add contaminants the EPA never even tests for.
+          </p>
+          <a id="ctaLink" href="https://go.4patriots.com/ofc-flash-sale/" class="cta-btn">See how to protect your water →</a>
+          <p class="cta-sub">No obligation. See your options in 60 seconds.</p>
+        </div>
+      `;
+
+      // Search again
+      html += `
+        <div class="search-again">
+          <a onclick="showScreen('hero')">Check another zip code</a>
+        </div>
+      `;
+
+      document.getElementById("results").innerHTML = html;
+      showScreen("results");
+      applyCtaParams(); // forward incoming ad params to CTA link
+
+      // ── RENDER CHARTS ──
+      if (sortedYears.length > 1) {
+        new Chart(document.getElementById("yearChart"), {
+          type: "bar",
+          data: {
+            labels: sortedYears,
+            datasets: [{
+              label: "Violations",
+              data: sortedYears.map(y => yearCounts[y]),
+              backgroundColor: "#f59e0b",
+              borderRadius: 4
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+              x: { ticks: { color: "#94a3b8" }, grid: { display: false } },
+              y: { ticks: { color: "#94a3b8", precision: 0 }, grid: { color: "#1e293b" } }
+            }
+          }
+        });
+      }
+
+      if (Object.keys(categoryCounts).length > 0) {
+        const catLabels = Object.keys(categoryCounts);
+        const catColors = ["#f59e0b", "#dc2626", "#3b82f6", "#22c55e", "#a855f7", "#ec4899"];
+        new Chart(document.getElementById("catChart"), {
+          type: "doughnut",
+          data: {
+            labels: catLabels,
+            datasets: [{
+              data: catLabels.map(c => categoryCounts[c]),
+              backgroundColor: catColors.slice(0, catLabels.length),
+              borderWidth: 0
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                position: "bottom",
+                labels: { color: "#94a3b8", padding: 12, font: { size: 11 } }
+              }
+            }
+          }
+        });
+      }
+    }
+
+    // ── COMMENTARY BUILDER ──
+    function buildCommentary(totalViolations, uniqueContaminants, pop, zip) {
+      let paragraphs = [];
+
+      if (totalViolations === 0) {
+        paragraphs.push(
+          `Good news: the EPA has no health-based violations on record for water systems in ${zip}. But "no violations" doesn't mean "no contaminants." It just means nothing exceeded the legal limit during the reporting period.`
+        );
+        paragraphs.push(
+          `The EPA sets maximum contaminant levels (MCLs) for about 90 substances. But there are thousands of chemicals that aren't regulated at all. Many experts argue the current standards haven't kept up with modern science.`
+        );
+      } else if (totalViolations <= 5) {
+        paragraphs.push(
+          `Your area has ${totalViolations} health-based violation${totalViolations > 1 ? "s" : ""} on record. Each one means a contaminant was detected above the legal safety limit set by the EPA.`
+        );
+        paragraphs.push(
+          `Even a single violation means your local water system delivered water that the federal government considers unsafe — at least temporarily. These events are more common than most people realize.`
+        );
+      } else if (totalViolations <= 20) {
+        paragraphs.push(
+          `${totalViolations} health-based violations is a notable number. Each one represents a period where contaminants in your local water supply exceeded the levels the EPA considers safe.`
+        );
+        paragraphs.push(
+          `These aren't paperwork issues. Health-based violations mean something harmful was found in the water at levels that could affect your family's health — especially for children, the elderly, and anyone with a weakened immune system.`
+        );
+      } else {
+        paragraphs.push(
+          `${totalViolations} health-based violations is a serious number. That's a pattern, not an accident. It suggests ongoing challenges with water treatment or infrastructure in your area.`
+        );
+        paragraphs.push(
+          `For context, the average American water system has far fewer violations on record. A number this high often points to aging pipes, underfunded treatment facilities, or contamination sources that haven't been addressed.`
+        );
+      }
+
+      paragraphs.push(
+        `Keep in mind: the EPA only tracks what's been reported. Many contaminants go undetected simply because they aren't required to be tested. The real picture may be worse than what's on paper.`
+      );
+
+      let html = `<div class="commentary"><h3>What this means for you</h3>`;
+      paragraphs.forEach(p => html += `<p>${p}</p>`);
+      html += `</div>`;
+      return html;
+    }
+
+    // ── FORMATTING HELPERS ──
+    function formatCategory(code) {
+      const map = {
+        "MCL": "Max contaminant level exceeded",
+        "MRDL": "Max disinfectant level exceeded",
+        "TT": "Treatment technique violation",
+        "MON": "Monitoring violation",
+        "RPT": "Reporting violation",
+        "MR": "Monitoring & reporting",
+        "Other": "Other violation"
+      };
+      return map[code] || code;
+    }
+
+    function formatContaminant(code) {
+      // Common EPA contaminant codes to human-readable names
+      const map = {
+        "1005": "Barium", "1010": "Cadmium", "1015": "Chromium", "1020": "Fluoride",
+        "1024": "Iron", "1025": "Mercury", "1030": "Nitrate", "1035": "Selenium",
+        "1038": "Uranium", "1040": "Arsenic", "1041": "Lead", "1042": "Copper",
+        "1045": "Antimony", "1050": "Beryllium", "1074": "Manganese",
+        "1085": "Thallium", "2010": "Turbidity", "2039": "E. coli",
+        "2050": "Total trihalomethanes (TTHM)", "2456": "Haloacetic acids (HAA5)",
+        "2900": "Nitrite", "2950": "Total coliform", "2981": "Chlorine",
+        "3100": "Gross alpha radiation", "3014": "Combined uranium",
+        "0100": "Total coliform", "0200": "Fecal coliform", "0300": "E. coli",
+        "0400": "Turbidity", "0500": "Surface water treatment",
+        "0999": "Combined filter effluent", "1": "Acute health", "2": "Non-acute health"
+      };
+      return map[code] || `Contaminant #${code}`;
+    }
+  </script>
+</body>
+</html>
